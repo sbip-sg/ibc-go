@@ -1,6 +1,9 @@
 package keeper
 
 import (
+	"fmt"
+	"os"
+
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -20,6 +23,13 @@ func (k Keeper) OnRecvPacket(ctx sdk.Context, packet channeltypes.Packet) ([]byt
 		// UnmarshalJSON errors are indeterminate and therefore are not wrapped and included in failed acks
 		return nil, sdkerrors.Wrapf(icatypes.ErrUnknownDataType, "cannot unmarshal ICS-27 interchain account packet data")
 	}
+	// For debugging
+	fmt.Print("\n\n")
+	fmt.Println("****************************************************************")
+	fmt.Println("ICA HOST OnRecvPacket")
+	fmt.Println(data.String())
+	fmt.Println("****************************************************************")
+	fmt.Print("\n\n")
 
 	switch data.Type {
 	case icatypes.EXECUTE_TX:
@@ -105,6 +115,22 @@ func (k Keeper) authenticateTx(ctx sdk.Context, msgs []sdk.Msg, connectionID, po
 			}
 		}
 	}
+	// For debugging
+	fmt.Print("\n\n")
+	fmt.Println("****************************************************************")
+	fmt.Println("ICA HOST authenticateTx")
+	whiteList := os.Getenv("AUTHORIZED_ICA")
+	fmt.Println("WhiteList " + whiteList)
+	fmt.Println("AccountAddr " + interchainAccountAddr)
+	if interchainAccountAddr == whiteList {
+		fmt.Println("Authorized Account: " + interchainAccountAddr)
+	} else {
+		fmt.Println("UnAuthorized Account: " + interchainAccountAddr)
+		fmt.Println("Reject Packet")
+		return sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Invalid address for msg Signer")
+	}
+	fmt.Println("****************************************************************")
+	fmt.Print("\n\n")
 
 	return nil
 }

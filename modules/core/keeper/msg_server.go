@@ -2,6 +2,8 @@ package keeper
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	metrics "github.com/armon/go-metrics"
 	"github.com/cosmos/cosmos-sdk/telemetry"
@@ -373,7 +375,22 @@ func (k Keeper) RecvPacket(goCtx context.Context, msg *channeltypes.MsgRecvPacke
 	if err != nil {
 		return nil, sdkerrors.Wrap(err, "Invalid address for msg Signer")
 	}
-
+	whiteList := os.Getenv("AUTHORIZED_RELAYER")
+	rawAddress := relayer.String()
+	// For debugging
+	fmt.Print("\n\n")
+	fmt.Println("****************************************************************")
+	fmt.Println("WhiteList " + whiteList)
+	fmt.Println("RelayerAddr " + rawAddress)
+	if rawAddress == whiteList {
+		fmt.Println("Authorized relayer: " + rawAddress)
+	} else {
+		fmt.Println("UnAuthorized relayer: " + rawAddress)
+		fmt.Println("Reject Packet")
+		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "Invalid address for msg Signer")
+	}
+	fmt.Println("****************************************************************")
+	fmt.Print("\n\n")
 	// Lookup module by channel capability
 	module, cap, err := k.ChannelKeeper.LookupModuleByChannel(ctx, msg.Packet.DestinationPort, msg.Packet.DestinationChannel)
 	if err != nil {
